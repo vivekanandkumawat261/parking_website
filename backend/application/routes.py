@@ -1,3 +1,8 @@
+
+# from flask import jsonify, request
+# from flask_jwt_extended import jwt_required, current_user
+# from .models import ParkingLot, ParkingSpot, db
+# from .routes import app, role_required
 from .models import User, ParkingLot, ParkingSpot, Reservation
 from .database import db
 from flask_jwt_extended import create_access_token, jwt_required, current_user
@@ -298,58 +303,107 @@ def update_parking_lot(lot_id):
         return jsonify({"error": str(e)}), 500
 
 
+
+# ✅ Admin: Get parking lot + its spots
 @app.route("/api/parkinglot/<int:lot_id>", methods=["GET"])
 @role_required("admin")
-def get_parking_lot(lot_id):
+def get_parking_lot_with_spots(lot_id):
     lot = ParkingLot.query.get(lot_id)
     if not lot:
         return jsonify({"error": "Parking lot not found"}), 404
-    
-    # Convert stored JSON/text to Python list
-    try:
-        import json
-        spot_status = json.loads(lot.spot_status)
-    except:
-        spot_status = lot.spot_status.split(",")
 
+    spots = ParkingSpot.query.filter_by(lot_id=lot.id).all()
     return jsonify({
         "id": lot.id,
-        "name": lot.name,
-        "spot_status": spot_status
+        "prime_location_name": lot.prime_location_name,
+        "address": lot.address,
+        "number_of_spots": lot.number_of_spots,
+        "spot_status": [s.status for s in spots]
     })
 
 
-@app.route("/api/delete-spot/<int:lot_id>/<int:spot_index>", methods=["DELETE"])
-def delete_spot(lot_id, spot_index):
+# ✅ Admin: Delete an unoccupied spot
+@app.route("/api/delete-spot/<int:lot_id>/<int:spot_id>", methods=["DELETE"])
+@role_required("admin")
+def delete_spot(lot_id, spot_id):
     lot = ParkingLot.query.get(lot_id)
     if not lot:
         return jsonify({"error": "Parking lot not found"}), 404
 
-    try:
-        spots = json.loads(lot.spot_status)
-    except:
-        spots = lot.spot_status.split(",")
+    spot = ParkingSpot.query.filter_by(id=spot_id, lot_id=lot_id).first()
+    if not spot:
+        return jsonify({"error": "Spot not found"}), 404
 
-    if spot_index < 0 or spot_index >= len(spots):
-        return jsonify({"error": "Invalid spot index"}), 400
-
-    # Check if spot is occupied
-    if spots[spot_index] in ["O", "Occupied"]:
+    if spot.status == "O":  # Occupied
         return jsonify({"error": "Cannot delete an occupied spot"}), 403
 
-    # Remove the spot
-    spots.pop(spot_index)
+    # ✅ Delete the spot
+    db.session.delete(spot)
 
-    # Save updated data
-    lot.spot_status = json.dumps(spots)
+    # ✅ Decrement lot's spot count
+    if lot.number_of_spots > 0:
+        lot.number_of_spots -= 1
+
     db.session.commit()
 
-    return jsonify({"message": "Spot deleted successfully", "updated_spots": spots})
+    return jsonify({
+        "message": "Spot deleted successfully",
+        "updated_number_of_spots": lot.number_of_spots
+    })
+
+
+# @app.route("/api/parkinglot/<int:lotId>", methods=["GET"])
+# @role_required("admin")
+# def get_parking_lot(lotId):
+#     lot = ParkingLot.query.get(lotId)
+#     if not lot:
+#         return jsonify({"error": "Parking lot not found"}), 404
+    
+#     # Convert stored JSON/text to Python list
+#     try:
+#         import json
+#         spot_status = json.loads(lot.spot_status)
+#     except:
+#         spot_status = lot.spot_status.split(",")
+
+#     return jsonify({
+#         "id": lot.id,
+#         "name": lot.name,
+#         "spot_status": spot_status
+#     })
+
+
+# @app.route("/api/delete-spot/<int:lot_id>/<int:spot_index>", methods=["DELETE"])
+# def delete_spot(lot_id, spot_index):
+#     lot = ParkingLot.query.get(lot_id)
+#     if not lot:
+#         return jsonify({"error": "Parking lot not found"}), 404
+
+#     try:
+#         spots = json.loads(lot.spot_status)
+#     except:
+#         spots = lot.spot_status.split(",")
+
+#     if spot_index < 0 or spot_index >= len(spots):
+#         return jsonify({"error": "Invalid spot index"}), 400
+
+#     # Check if spot is occupied
+#     if spots[spot_index] in ["O", "Occupied"]:
+#         return jsonify({"error": "Cannot delete an occupied spot"}), 403
+
+#     # Remove the spot
+#     spots.pop(spot_index)
+
+#     # Save updated data
+#     lot.spot_status = json.dumps(spots)
+#     db.session.commit()
+
+#     return jsonify({"message": "Spot deleted successfully", "updated_spots": spots})
 
 # ---------------------------------------
 # 🗑️ Admin: Delete Parking Lot
 # ---------------------------------------
-@app.route("/admin/parkingLots/<int:lot_id>", methods=["DELETE"])
+@app.route("/admin/parkinglots/<int:lot_id>", methods=["DELETE"])
 @role_required("admin")
 def delete_parking_lot(lot_id):
     lot = ParkingLot.query.get_or_404(lot_id)

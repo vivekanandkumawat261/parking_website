@@ -46,11 +46,12 @@ class ParkingLot(db.Model):
     address = db.Column(db.String(255), nullable=False)
     pin_code = db.Column(db.String(10), nullable=False)
     number_of_spots = db.Column(db.Integer, nullable=False)
-
     spots = db.relationship('ParkingSpot', backref='lot', lazy=True)
 
-    def __repr__(self):
-        return f'<ParkingLot {self.prime_location_name}>'
+    def update_spot_count(self):
+        self.number_of_spots = len(self.spots)
+        db.session.commit()
+
 
 
 # -------------------------
