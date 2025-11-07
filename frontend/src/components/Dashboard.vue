@@ -160,6 +160,22 @@
         <h6 class="mt-3 text-center">Parking Spot Status</h6>
         <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
           <div
+            v-for="(status, index) in lot.spot_status"
+            :key="index"
+            class="spot-box"
+            :class="{
+              available: status === 'A',
+              occupied: status === 'O',
+              reserved: status === 'R'
+            }"
+            @click="showDetails(index)"
+          >
+           <RouterLink :to="`/admin/view-spot/${lot.id}`" style="color: black; text-decoration: none;">
+                     {{spot}}
+                    
+              </RouterLink>
+          </div>
+          <div
             v-for="(spot, index) in lot.spot_status"
             :key="index"
             class="spot-box"
@@ -171,7 +187,8 @@
             }"
           >
              <RouterLink :to="`/admin/view-spot/${lot.id}`" style="color: white; text-decoration: none;">
-                     {{ spot }}
+                     {{spot}}
+                    
               </RouterLink>
           </div>
         </div>

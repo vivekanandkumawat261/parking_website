@@ -17,6 +17,11 @@
         {{ spot }}
       </div>
     </div>
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+      <div>
+        {{ selectedSpot.id}}
+      </div>
+    </div>
 
     <!-- Modal -->
     <div v-if="showModal" class="modal-overlay">
@@ -77,7 +82,7 @@ export default {
     },
 
     openModal(index, status) {
-      this.selectedSpot = { id: index + 1, status };
+      this.selectedSpot = { id: index+1, status };
       this.showModal = true;
     },
 

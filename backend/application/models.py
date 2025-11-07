@@ -64,6 +64,10 @@ class ParkingSpot(db.Model):
     lot_id = db.Column(db.Integer, db.ForeignKey('parking_lots.id'), nullable=False)
     status = db.Column(db.String(1), nullable=False, default='A')  # A = Available, O = Occupied
 
+    customer_id = db.Column(db.String(50))
+    vehicle_number = db.Column(db.String(50))
+    date_time_of_parking = db.Column(db.DateTime)
+    estimated_cost = db.Column(db.Float)
     reservations = db.relationship('Reservation', backref='spot', lazy=True)
 
     def __repr__(self):

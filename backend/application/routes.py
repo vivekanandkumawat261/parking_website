@@ -321,6 +321,25 @@ def get_parking_lot_with_spots(lot_id):
         "spot_status": [s.status for s in spots]
     })
 
+# ✅ Admin: Get details of a specific parking spot
+@app.route("/api/parking_spot/<int:spot_id>", methods=["GET"])
+@role_required("admin")
+def get_parking_spot_details(spot_id):
+    spot = ParkingSpot.query.get(spot_id)
+    if not spot:
+        return jsonify({"error": "Parking spot not found"}), 404
+
+    # Assuming you have these fields in your ParkingSpot model
+    return jsonify({
+        "id": spot.id,
+        "lot_id": spot.lot_id,
+        "status": spot.status,
+        "customer_id": spot.customer_id,
+        "vehicle_number": spot.vehicle_number,
+        "date_time_of_parking": spot.date_time_of_parking.strftime("%d-%m-%Y %H:%M") if spot.date_time_of_parking else None,
+        "estimated_cost": spot.estimated_cost
+    })
+
 
 # ✅ Admin: Delete an unoccupied spot
 @app.route("/api/delete-spot/<int:lot_id>/<int:spot_id>", methods=["DELETE"])
